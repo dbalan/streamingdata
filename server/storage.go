@@ -12,7 +12,6 @@ var KeyExpiredError = fmt.Errorf("key expired")
 
 type SessionData struct {
 	ClientID  string `json:"client_id"`
-	Count     int64  `json:"count"`
 	Last      int64  `json:"last"`
 	DiscardTs int64  `json:"discard_ts"`
 	Seed      int64  `json:"seed"`

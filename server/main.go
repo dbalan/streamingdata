@@ -77,7 +77,6 @@ func (rt *realTimeServer) GetStateFullStream(req *pb.StateFullRequest,
 		// assume new session
 		session = &SessionData{
 			ClientID: req.Clientid,
-			Count:    req.Count,
 			Seed:     rand.Int63(),
 		}
 

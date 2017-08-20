@@ -2,6 +2,7 @@
 1. All access is through gRPC 
 2. Values ones read from the server is assumed to be recieved by client, and should not be lost (this is true for network because tcp ensures the ordered delivery of packets), but if the client looses the data due to anything above network, this api would fail.
 3. Server can process as many simultaneous requests as resources allow, we would definitely have a problem if we exhaust the port space, number of fd set by ulimit (should be disabled in linux), storage space provided by the storage backend used and network badwidth available.
+4. Server is responsible for sending the data in intervals and closing the connection when specified number of data has been sent.
 
 
 ## API Specs
@@ -33,6 +34,15 @@ message IntResponse {
 ```
 - current_val is the current response from server.
 
+#### Reconnect
+Client is responsible for keeping track of state while re-connecting, lastseen param should be set properly what reconnecting. Also, it would be nice to have an exponential backoff mechanism while retrying.
+
+#### Server states
+None
+
+#### Client States
+1. Data recieved so far, and last_seen element and remaining number of elements
+
 ### GetStateFullStream
 Defined as `rpc GetStateFullStream (StateFullRequest) returns (stream StateFullResponse) {}`
 
@@ -58,4 +68,10 @@ message StateFullResponse {
 
 - current_val, current rng output
 - hash_sum: sha256 hash of all the numbers that were sent, optional, only set for last message.
+
+#### Reconnect
+Server is responsible for keeping track of reconnections as long as 30s has not expired after last disconnect. Client need not do anything other than retrying, and keeping track of data already recieved.
+
+#### Server state
+Server stores the client ID, number of elements sent and the seed for the PRNG being used and last disconnect time.
 
