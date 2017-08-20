@@ -110,7 +110,7 @@ func (rt *realTimeServer) GetStateFullStream(req *pb.StateFullRequest,
 
 		// FIXME: there is a cleaner way to do this.
 		if i == req.Count-1 {
-			resp.HashSum = string(h.Sum(nil))
+			resp.HashSum = fmt.Sprintf("%x", h.Sum(nil))
 		}
 
 		if err = stream.Send(resp); err != nil {

@@ -4,6 +4,8 @@ var sleep = require('sleep');
 var grpc = require('grpc');
 var cmdargs = require('command-line-args');
 var crypto = require("crypto");
+var sha256 = require('js-sha256');
+
 var streaming_proto = grpc.load(PROTO_PATH).streamingdata;
 
 function main() {
@@ -27,16 +29,23 @@ function main() {
     }
 
     var clientID = genClientID();
+    var hash = sha256.create();
     var req = {'clientid': clientID, 'count': options['count']};
     var call = client.getStateFullStream(req);
+    var last_hash = '';
     call.on('data', function(resp){
-        console.log(resp);
-        if (resp.hash_sum != ''){
-            console.log("hash is: "+resp.hash_sum);
-        }
+        console.log('got value: ', resp.current_val);
+        last_hash = resp.hash_sum;;
+
+        hash.update(resp.current_val.toString());
     });
     call.on('end', function(resp) {
         console.log('stream ended');
+        console.log("our hash:" + hash.hex());
+        console.log("hash from server: " + last_hash);
+        if (hash.hex() != last_hash) {
+            console.log("housten we might have a problem?");
+       }
     });
     call.on('error', function(){
         console.log('error');
@@ -46,6 +55,7 @@ function main() {
 function genClientID() {
     return crypto.randomBytes(20).toString('hex');
 }
+
 function stateLessQuery(client, count, last, sum) {
     var statelessreq = {'count': count};
     if (last != 0) {
