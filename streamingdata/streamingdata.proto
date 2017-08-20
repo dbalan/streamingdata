@@ -2,14 +2,15 @@ syntax = "proto3";
 
 package streamingdata;
 
-/*
+
 service RealTime {
-  rpc GetStateLesStream (StateLessRequest) returns (stream IntResponse) {}
-  rpc GetStateFullStream (StateFullRequest) returns (stream IntResponse) {}
+  rpc GetPing(Empty) returns (PingResponse) {}
+  rpc GetStateLessStream (StateLessRequest) returns (stream IntResponse) {}
+  //  rpc GetStateFullStream (StateFullRequest) returns (stream IntResponse) {}
 }
 
 message StateLessRequest {
-  int32 count = 1;
+  int64 count = 1;
   uint32 lastseen = 2; // optional, really
 }
 
@@ -20,11 +21,6 @@ message StateFullRequest {
 
 message IntResponse {
   uint32 current_val = 1;
-}
-*/
-
-service RealTime {
-  rpc GetPing(Empty) returns (PingResponse) {}
 }
 
 message Empty {}

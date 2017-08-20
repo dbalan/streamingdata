@@ -9,7 +9,9 @@ import (
 	context "golang.org/x/net/context"
 	"google.golang.org/grpc"
 	"log"
+	"math/rand"
 	"net"
+	"time"
 )
 
 var (
@@ -20,6 +22,32 @@ type realTimeServer struct{}
 
 func (rt *realTimeServer) GetPing(ctx context.Context, e *pb.Empty) (*pb.PingResponse, error) {
 	return &pb.PingResponse{"PONG"}, nil
+}
+
+func (rt *realTimeServer) GetStateLessStream(req *pb.StateLessRequest,
+	stream pb.RealTime_GetStateLessStreamServer) error {
+
+	var start uint32 = req.Lastseen
+	for start == 0 {
+		// FIXME: where is this seeded from?
+		start = rand.Uint32()
+	}
+
+	for i := 0; i < int(req.Count); i++ {
+		// we start with twice of the number that rand gave us (or next number
+		// in case its a reconnect)
+		start = start * 2
+
+		res := &pb.IntResponse{start}
+
+		if err := stream.Send(res); err != nil {
+			log.Printf("failed sending: %v", err)
+			return err
+		}
+		// FIXME: small interval for testing
+		time.Sleep(1 * time.Second)
+	}
+	return nil
 }
 
 func main() {
