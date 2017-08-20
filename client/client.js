@@ -42,7 +42,7 @@ function stateFullQuerySetup(client, count) {
     stateFullQuery(client, count, clientID, last_hash, hash, false, 1);
 }
 
-function stateFullQuery(client, count, clientID, last_hash, hash, retry) {
+function stateFullQuery(client, count, clientID, last_hash, hash, reconn, retry) {
     var req = {'clientid': clientID, 'count': count, 'reconnect': reconn};
     var call = client.getStateFullStream(req);
     call.on('data', function(resp){
@@ -57,6 +57,8 @@ function stateFullQuery(client, count, clientID, last_hash, hash, retry) {
         console.log("hash from server: " + last_hash);
         if (hash.hex() != last_hash) {
             console.log("housten we might have a problem?");
+        } else {
+            console.log("hashes match, all good");
         }
     });
     call.on('error', function(){

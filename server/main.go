@@ -117,7 +117,7 @@ func (rt *realTimeServer) GetStateFullStream(req *pb.StateFullRequest,
 			resp.HashSum = fmt.Sprintf("%x", h.Sum(nil))
 		}
 
-		// FIXME for testing by killing server.
+		// only for testing by killing server.
 		/*
 			session.DiscardTs = time.Now().Unix()
 			err = storage.Store(session)
@@ -142,8 +142,8 @@ func (rt *realTimeServer) GetStateFullStream(req *pb.StateFullRequest,
 
 func main() {
 	flag.Parse()
-	// storage = NewInMemStorage()
-	storage = NewRedisStorage()
+	storage = NewInMemStorage()
+	// storage = NewRedisStorage()
 	sock, err := net.Listen("tcp", fmt.Sprintf(":%d", *port))
 	if err != nil {
 		log.Fatalf("failed to listen: %v", err)
