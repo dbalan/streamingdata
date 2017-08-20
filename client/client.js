@@ -18,13 +18,13 @@ function main() {
 
     // FIXME: usage string
     if (options['mode'] != 'stateful' && options['mode'] != 'stateless') {
-        console.log('choose correct mode!')
-        process.exit(-1)
+        console.log('choose correct mode!');
+        process.exit(-1);
     }
     var client = new streaming_proto.RealTime(options['server'], grpc.credentials.createInsecure());
 
     if (options['mode'] == 'stateless') {
-        stateLessQuery(client, options['count'], 0, 0);
+        stateLessQuery(client, options['count'], 0, 0,1);
         return;
     }
 
@@ -39,10 +39,10 @@ function stateFullQuerySetup(client, count) {
     var clientID = genClientID();
     var hash = sha256.create();
     var last_hash = '';
-    stateFullQuery(client, count, clientID, last_hash, hash, false);
+    stateFullQuery(client, count, clientID, last_hash, hash, false, 1);
 }
 
-function stateFullQuery(client, count, clientID, last_hash, hash, reconn) {
+function stateFullQuery(client, count, clientID, last_hash, hash, retry) {
     var req = {'clientid': clientID, 'count': count, 'reconnect': reconn};
     var call = client.getStateFullStream(req);
     call.on('data', function(resp){
@@ -60,18 +60,23 @@ function stateFullQuery(client, count, clientID, last_hash, hash, reconn) {
         }
     });
     call.on('error', function(){
+        if (retry == 5) {
+            console.log("5 times failed, giving up");
+            process.exit(-1);
+        }
         console.log('sleeping');
-        sleep.sleep(4);
-        stateFullQuery(client, count, clientID, last_hash, hash, true);
+        sleep.sleep(retry*2);
+        stateFullQuery(client, count, clientID, last_hash, hash, true, retry+1);
     });
 }
 
-function stateLessQuery(client, count, last, sum) {
+function stateLessQuery(client, count, last, sum, retry) {
     var statelessreq = {'count': count};
     if (last != 0) {
         // we're restarting
         statelessreq['lastseen'] = last;
     }
+
     var call = client.getStateLessStream(statelessreq);
     call.on('data', function(resp){
         // debug
@@ -84,11 +89,14 @@ function stateLessQuery(client, count, last, sum) {
         console.log("sum is: "+sum);
     });
     call.on('error', function(){
+        if (retry == 5) {
+            console.log("5 times failed, giving up");
+            process.exit(-1);
+        }
         console.log('error sleeping');
-        // FIXME: make this exponential, and generalize with the other API
-        sleep.sleep(4);
-        stateLessQuery(client, count, last, sum);
+        // FIXME: generalize with the other API
+        sleep.sleep(retry*2);
+        stateLessQuery(client, count, last, sum, retry);
     });
 }
-
 main();
