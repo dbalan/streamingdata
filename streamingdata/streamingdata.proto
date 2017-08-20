@@ -20,7 +20,7 @@ message StateFullRequest {
   // we can avoid this and use count as the marker (cur = first_count - count)
   // but then clients reconnecting after server has expired the key will get
   // wrong response.
-  int64 lastseencur = 2; 
+  bool reconnect = 2; 
   int64 count = 3;
 }
 

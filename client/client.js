@@ -28,15 +28,27 @@ function main() {
         return;
     }
 
+    stateFullQuerySetup(client, options['count']);
+}
+
+function genClientID() {
+    return crypto.randomBytes(20).toString('hex');
+}
+
+function stateFullQuerySetup(client, count) {
     var clientID = genClientID();
     var hash = sha256.create();
-    var req = {'clientid': clientID, 'count': options['count']};
-    var call = client.getStateFullStream(req);
     var last_hash = '';
+    stateFullQuery(client, count, clientID, last_hash, hash, false);
+}
+
+function stateFullQuery(client, count, clientID, last_hash, hash, reconn) {
+    var req = {'clientid': clientID, 'count': count, 'reconnect': reconn};
+    var call = client.getStateFullStream(req);
     call.on('data', function(resp){
         console.log('got value: ', resp.current_val);
         last_hash = resp.hash_sum;;
-
+        count--;
         hash.update(resp.current_val.toString());
     });
     call.on('end', function(resp) {
@@ -45,15 +57,13 @@ function main() {
         console.log("hash from server: " + last_hash);
         if (hash.hex() != last_hash) {
             console.log("housten we might have a problem?");
-       }
+        }
     });
     call.on('error', function(){
-        console.log('error');
+        console.log('sleeping');
+        sleep.sleep(4);
+        stateFullQuery(client, count, clientID, last_hash, hash, true);
     });
-}
-
-function genClientID() {
-    return crypto.randomBytes(20).toString('hex');
 }
 
 function stateLessQuery(client, count, last, sum) {

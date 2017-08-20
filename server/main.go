@@ -16,7 +16,9 @@ import (
 )
 
 var (
-	port    = flag.Int("port", 8000, "The Server Port")
+	port = flag.Int("port", 8000, "The Server Port")
+
+	// as long as this interface is satisfied, plug any storage
 	storage Storage
 )
 
@@ -66,7 +68,7 @@ func (rt *realTimeServer) GetStateFullStream(req *pb.StateFullRequest,
 	var err error
 	var session *SessionData
 
-	if req.Lastseencur != 0 {
+	if req.Reconnect {
 		session, err = storage.Retrive(req.Clientid)
 		if err != nil {
 			log.Printf("error retriving state: %v", err)
@@ -93,7 +95,9 @@ func (rt *realTimeServer) GetStateFullStream(req *pb.StateFullRequest,
 				break
 			}
 			cur := rng.Uint32()
+			fmt.Printf("replying: %d", cur)
 			h.Write([]byte(fmt.Sprintf("%d", cur)))
+			i++
 		}
 
 	}
@@ -113,19 +117,33 @@ func (rt *realTimeServer) GetStateFullStream(req *pb.StateFullRequest,
 			resp.HashSum = fmt.Sprintf("%x", h.Sum(nil))
 		}
 
+		// FIXME for testing by killing server.
+		/*
+			session.DiscardTs = time.Now().Unix()
+			err = storage.Store(session)
+			if err != nil {
+				log.Fatal("storage failed!")
+			}
+		*/
 		if err = stream.Send(resp); err != nil {
 			// Sending failed.
 			session.DiscardTs = time.Now().Unix()
-			storage.Store(session)
+			err = storage.Store(session)
+			if err != nil {
+				log.Fatal("storage backend failed")
+			}
+			break
 		}
 		i++
+		time.Sleep(1 * time.Second)
 	}
 	return nil
 }
 
 func main() {
 	flag.Parse()
-	storage = NewInMemStorage()
+	// storage = NewInMemStorage()
+	storage = NewRedisStorage()
 	sock, err := net.Listen("tcp", fmt.Sprintf(":%d", *port))
 	if err != nil {
 		log.Fatalf("failed to listen: %v", err)
