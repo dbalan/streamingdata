@@ -70,8 +70,13 @@ message StateFullResponse {
 - hash_sum: sha256 hash of all the numbers that were sent, optional, only set for last message.
 
 #### Reconnect
-Server is responsible for keeping track of reconnections as long as 30s has not expired after last disconnect. Client need not do anything other than retrying, and keeping track of data already recieved.
+Server is responsible for keeping track of reconnections as long as 30s has not expired after last disconnect. Client need not do anything other than retrying with the same clientID, and keeping track of data already recieved.
 
 #### Server state
-Server stores the client ID, number of elements sent and the seed for the PRNG being used and last disconnect time.
+Server stores 
+1. the client ID: to identify the client connection, if it gets disconnected.
+2. number of elements sent - this removes the same state need to be stored in client.
+3. the seed for the PRNG being used - this could be replaced with a PRNG state.
+4. last disconnect time for expiring keys
+We could maybe remove the seed and store the PRNG state ifself which would save a bit of computation for the server, but however that means we would have to save the hash states too.
 
