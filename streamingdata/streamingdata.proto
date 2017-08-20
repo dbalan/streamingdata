@@ -6,17 +6,27 @@ package streamingdata;
 service RealTime {
   rpc GetPing(Empty) returns (PingResponse) {}
   rpc GetStateLessStream (StateLessRequest) returns (stream IntResponse) {}
-  //  rpc GetStateFullStream (StateFullRequest) returns (stream IntResponse) {}
+  rpc GetStateFullStream (StateFullRequest) returns (stream StateFullResponse) {}
 }
 
 message StateLessRequest {
   int64 count = 1;
-  uint32 lastseen = 2; // optional, really
+  uint32 lastseen = 2; // optional value, used for reconnecting
 }
 
 message StateFullRequest {
   string clientid = 1;
-  int32 count = 2;
+
+  // we can avoid this and use count as the marker (cur = first_count - count)
+  // but then clients reconnecting after server has expired the key will get
+  // wrong response.
+  int64 lastseencur = 2; 
+  int64 count = 3;
+}
+
+message StateFullResponse {
+  uint32 current_val = 1;
+  string hash_sum = 2; // will only be set for last message.
 }
 
 message IntResponse {
