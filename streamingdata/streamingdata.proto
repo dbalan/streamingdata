@@ -14,13 +14,12 @@ message StateLessRequest {
   uint32 lastseen = 2; // optional value, used for reconnecting
 }
 
+message IntResponse {
+  uint32 current_val = 1;
+}
+
 message StateFullRequest {
   string clientid = 1;
-
-  // we can avoid this and use count as the marker (cur = first_count - count)
-  // but then clients reconnecting after server has expired the key will get
-  // wrong response.
-  bool reconnect = 2; 
   int64 count = 3;
 }
 
@@ -29,9 +28,6 @@ message StateFullResponse {
   string hash_sum = 2; // will only be set for last message.
 }
 
-message IntResponse {
-  uint32 current_val = 1;
-}
 
 message Empty {}
 

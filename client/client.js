@@ -39,16 +39,15 @@ function stateFullQuerySetup(client, count) {
     var clientID = genClientID();
     var hash = sha256.create();
     var last_hash = '';
-    stateFullQuery(client, count, clientID, last_hash, hash, false, 1);
+    stateFullQuery(client, count, clientID, last_hash, hash, 1);
 }
 
-function stateFullQuery(client, count, clientID, last_hash, hash, reconn, retry) {
-    var req = {'clientid': clientID, 'count': count, 'reconnect': reconn};
+function stateFullQuery(client, count, clientID, last_hash, hash, retry) {
+    var req = {'clientid': clientID, 'count': count};
     var call = client.getStateFullStream(req);
     call.on('data', function(resp){
         console.log('got value: ', resp.current_val);
         last_hash = resp.hash_sum;;
-        count--;
         hash.update(resp.current_val.toString());
     });
     call.on('end', function(resp) {
@@ -68,7 +67,7 @@ function stateFullQuery(client, count, clientID, last_hash, hash, reconn, retry)
         }
         console.log('sleeping');
         sleep.sleep(retry*2);
-        stateFullQuery(client, count, clientID, last_hash, hash, true, retry+1);
+        stateFullQuery(client, count, clientID, last_hash, hash, retry+1);
     });
 }
 

@@ -68,30 +68,27 @@ func (rt *realTimeServer) GetStateFullStream(req *pb.StateFullRequest,
 	var err error
 	var session *SessionData
 
-	if req.Reconnect {
-		session, err = storage.Retrive(req.Clientid)
-		if err != nil {
-			log.Printf("error retriving state: %v", err)
+	session, err = storage.Retrive(req.Clientid)
+	if err != nil {
+		if err == KeyExpiredError {
+			log.Printf("key expired: %v", err)
 			return err
 		}
-
-	} else {
+		// assume new session
 		session = &SessionData{
 			ClientID: req.Clientid,
 			Count:    req.Count,
 			Seed:     rand.Int63(),
 		}
+
 	}
 
 	h := sha256.New()
 	rng := rand.New(rand.NewSource(session.Seed))
-	if req.Count < session.Count {
-		// then this is a reconnect
-		sentCnt := session.Count - req.Count
-		// FIXME: loop can be better
+	if session.Last != 0 {
 		var i int64 = 0
 		for {
-			if i >= sentCnt {
+			if i >= session.Last {
 				break
 			}
 			cur := rng.Uint32()
@@ -103,8 +100,9 @@ func (rt *realTimeServer) GetStateFullStream(req *pb.StateFullRequest,
 	}
 
 	var i int64 = 0
+	mtosnd := req.Count - session.Last
 	for {
-		if i >= req.Count {
+		if i >= mtosnd {
 			break
 		}
 		cur := rng.Uint32()
@@ -113,13 +111,14 @@ func (rt *realTimeServer) GetStateFullStream(req *pb.StateFullRequest,
 		resp := &pb.StateFullResponse{CurrentVal: cur}
 
 		// FIXME: there is a cleaner way to do this.
-		if i == req.Count-1 {
+		if i == mtosnd-1 {
 			resp.HashSum = fmt.Sprintf("%x", h.Sum(nil))
 		}
 
 		// only for testing by killing server.
 		/*
 			session.DiscardTs = time.Now().Unix()
+			session.Last = i + 1
 			err = storage.Store(session)
 			if err != nil {
 				log.Fatal("storage failed!")
@@ -127,6 +126,7 @@ func (rt *realTimeServer) GetStateFullStream(req *pb.StateFullRequest,
 		*/
 		if err = stream.Send(resp); err != nil {
 			// Sending failed.
+			session.Last = i + 1
 			session.DiscardTs = time.Now().Unix()
 			err = storage.Store(session)
 			if err != nil {

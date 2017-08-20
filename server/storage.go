@@ -8,9 +8,12 @@ import (
 	"time"
 )
 
+var KeyExpiredError = fmt.Errorf("key expired")
+
 type SessionData struct {
 	ClientID  string `json:"client_id"`
 	Count     int64  `json:"count"`
+	Last      int64  `json:"last"`
 	DiscardTs int64  `json:"discard_ts"`
 	Seed      int64  `json:"seed"`
 }
@@ -67,7 +70,7 @@ func (r *redisMem) Retrive(cid string) (*SessionData, error) {
 	}
 	if s.DiscardTs != 0 {
 		if time.Now().Unix()-30 >= s.DiscardTs {
-			return nil, fmt.Errorf("key expired")
+			return nil, KeyExpiredError
 		}
 	}
 	return &s, nil
@@ -95,7 +98,7 @@ func (s *inMem) Retrive(cid string) (*SessionData, error) {
 	}
 	if state.DiscardTs != 0 {
 		if time.Now().Unix()-30 >= state.DiscardTs {
-			return nil, fmt.Errorf("key expired")
+			return nil, KeyExpiredError
 		}
 	}
 	return state, nil
