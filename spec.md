@@ -3,7 +3,7 @@
 2. Values ones read from the server is assumed to be recieved by client, and should not be lost (this is true for network because tcp ensures the ordered delivery of packets), but if the client looses the data due to anything above network, this api would fail.
 3. Server can process as many simultaneous requests as resources allow, we would definitely have a problem if we exhaust the port space, number of fd set by ulimit (should be disabled in linux), storage space provided by the storage backend used and network badwidth available.
 4. Server is responsible for sending the data in intervals and closing the connection when specified number of data has been sent.
-
+5. Subsequent numbers in the stream are atleast 1s second apart.
 
 ## API Specs
 ### GetStateLessStream

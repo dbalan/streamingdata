@@ -30,3 +30,9 @@ schema defenitions in protocol in streamingdata/ folder
 1. Make sure nodejs and npm are installed.
 2. install dependencies `cd <repo_root>/client && npm install`
 3. run `node client.js --count <n> --mode 'stateless|stateful'`
+
+## Testing
+1. Go to server folder `$GOPATH/src/github.com/dbalan/streamingdata/server`
+2. Run go test `go test -v`
+
+
