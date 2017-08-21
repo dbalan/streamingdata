@@ -31,8 +31,13 @@ schema defenitions in protocol in streamingdata/ folder
 2. install dependencies `cd <repo_root>/client && npm install`
 3. run `node client.js --count <n> --mode 'stateless|stateful'`
 
-## Testing
+## Testing - Server APIS
 1. Go to server folder `$GOPATH/src/github.com/dbalan/streamingdata/server`
 2. Run go test `go test -v`
+
+## Testing - Reconnection
+1. Go to `recon_tests` subfolder, contains reconnection tests, to run
+2. Ensure that server is running at port 8000
+3. run `./recon.sh`
 
 

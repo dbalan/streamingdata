@@ -68,10 +68,14 @@ func (rt *realTimeServer) GetStateFullStream(req *pb.StateFullRequest,
 	var err error
 	var session *SessionData
 
+	fmt.Println("trying to retrive things")
 	session, err = storage.Retrive(req.Clientid)
 	if err != nil {
 		if err == KeyExpiredError {
 			log.Printf("key expired: %v", err)
+			return err
+		} else if err == AlreadyPresentError {
+			log.Printf("session in progress, please try again")
 			return err
 		}
 		// assume new session
@@ -125,7 +129,7 @@ func (rt *realTimeServer) GetStateFullStream(req *pb.StateFullRequest,
 		*/
 		if err = stream.Send(resp); err != nil {
 			// Sending failed.
-			session.Last = i + 1
+			session.Last = i
 			session.DiscardTs = time.Now().Unix()
 			err = storage.Store(session)
 			if err != nil {

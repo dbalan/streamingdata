@@ -9,6 +9,7 @@ import (
 )
 
 var KeyExpiredError = fmt.Errorf("key expired")
+var AlreadyPresentError = fmt.Errorf("session duplicate")
 
 type SessionData struct {
 	ClientID  string `json:"client_id"`
@@ -21,6 +22,7 @@ type inMem struct {
 	// both accessors modify map.
 	lock    sync.Mutex
 	storage map[string]*SessionData
+	lockmap map[string]bool
 }
 
 type redisMem struct {
@@ -77,20 +79,27 @@ func (r *redisMem) Retrive(cid string) (*SessionData, error) {
 
 func NewInMemStorage() *inMem {
 	s := make(map[string]*SessionData)
-	return &inMem{sync.Mutex{}, s}
+	l := make(map[string]bool)
+	return &inMem{sync.Mutex{}, s, l}
 }
 
 func (s *inMem) Store(sd *SessionData) error {
 	s.lock.Lock()
 	defer s.lock.Unlock()
 	s.storage[sd.ClientID] = sd
+	delete(s.lockmap, sd.ClientID)
 	return nil
 }
 
 func (s *inMem) Retrive(cid string) (*SessionData, error) {
 	s.lock.Lock()
+	_, ok := s.lockmap[cid]
+	if ok {
+		return nil, AlreadyPresentError
+	}
 	state, ok := s.storage[cid]
 	delete(s.storage, cid)
+	s.lockmap[cid] = true
 	s.lock.Unlock()
 	if !ok {
 		return nil, fmt.Errorf("no such key")
