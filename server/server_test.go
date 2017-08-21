@@ -7,10 +7,9 @@ import (
 	"google.golang.org/grpc"
 	"io"
 	// 	"io/ioutil"
-	//	"os"
-	// 	"os/exec"
+	"os/exec"
 	"testing"
-	// 	"time"
+	"time"
 )
 
 var testport int = 8000
@@ -18,15 +17,17 @@ var conn *grpc.ClientConn
 var client pb.RealTimeClient
 
 func setup() {
-	/*	cmd := exec.Command("./server", "-p", fmt.Sprintf("%d", testport))
-		err = cmd.Start()
-		if err != nil {
-			os.Exit(-1)
-		}
-
-		time.Sleep(1 * time.Second)
-	*/
 	var err error
+	go func() {
+		cmd := exec.Command("./server", "-port", fmt.Sprintf("%d", testport))
+		err := cmd.Start()
+		if err != nil {
+			panic("starting server failed")
+		}
+	}()
+
+	time.Sleep(1 * time.Second)
+
 	conn, err = grpc.Dial(fmt.Sprintf("localhost:%d", testport), grpc.WithInsecure())
 	if err != nil {
 		panic("grpc connection failed")
@@ -79,7 +80,6 @@ func TestStateLessApiReconnect(t *testing.T) {
 	req.Lastseen = resp.CurrentVal
 
 	// try again.
-
 	stream, err = client.GetStateLessStream(context.Background(), req)
 	if err != nil {
 		t.Error("stateless query reconnect returned err", err)
