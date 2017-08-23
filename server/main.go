@@ -42,10 +42,7 @@ func (rt *realTimeServer) GetStateLessStream(req *pb.StateLessRequest,
 	}
 
 	var i int64 = 0
-	for {
-		if i >= req.Count {
-			break
-		}
+	for i = 0; i < req.Count; i++ {
 		// we start with twice of the number that rand gave us (or next number
 		// in case its a reconnect)
 		start = start * 2
@@ -67,6 +64,7 @@ func (rt *realTimeServer) GetStateFullStream(req *pb.StateFullRequest,
 	stream pb.RealTime_GetStateFullStreamServer) error {
 	var err error
 	var session *SessionData
+	var i int64
 
 	fmt.Println("trying to retrive things")
 	session, err = storage.Retrive(req.Clientid)
@@ -89,25 +87,16 @@ func (rt *realTimeServer) GetStateFullStream(req *pb.StateFullRequest,
 	h := sha256.New()
 	rng := rand.New(rand.NewSource(session.Seed))
 	if session.Last != 0 {
-		var i int64 = 0
-		for {
-			if i >= session.Last {
-				break
-			}
+		for i = 0; i < session.Last; i++ {
 			cur := rng.Uint32()
-			fmt.Printf("replying: %d", cur)
+			fmt.Printf("replying: %d\n", cur)
 			h.Write([]byte(fmt.Sprintf("%d", cur)))
-			i++
 		}
 
 	}
 
-	var i int64 = 0
 	mtosnd := req.Count - session.Last
-	for {
-		if i >= mtosnd {
-			break
-		}
+	for i = 0; int64(i) < mtosnd; i++ {
 		cur := rng.Uint32()
 		h.Write([]byte(fmt.Sprintf("%d", cur)))
 
@@ -137,7 +126,6 @@ func (rt *realTimeServer) GetStateFullStream(req *pb.StateFullRequest,
 			}
 			break
 		}
-		i++
 		time.Sleep(1 * time.Second)
 	}
 	return nil
